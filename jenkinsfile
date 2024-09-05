@@ -2,6 +2,15 @@ pipeline {
     agent any
 
     stages {
+        stage('Checkout') {
+            steps {
+                checkout([$class: 'GitSCM', 
+                    branches: [[name: '*/main']], 
+                    userRemoteConfigs: [[url: 'https://github.com/Saeedkamal/Jenkins-Pipeline.git']]
+                ])
+            }
+        }
+        
         stage('Build') {
             steps {
                 echo 'Building the project using Maven...'
@@ -46,15 +55,5 @@ pipeline {
 
         stage('Deploy to Production') {
             steps {
-                echo 'Deploying to production server...'
-                // Production deployment script
-            }
-        }
-    }
+                echo 'Deploying to production server
 
-    post {
-        always {
-            echo 'This will always run, e.g., clean up or notifications'
-        }
-    }
-}
