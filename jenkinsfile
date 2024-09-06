@@ -20,11 +20,34 @@ pipeline {
         
         stage('Unit and Integration Tests') {
             steps {
-                echo 'Running unit and integration tests...'
-                // sh 'mvn test'
+                script {
+                    logFile = "unit_integration_tests.log"
+                    sh "echo Running unit and integration tests... > ${logFile}"
+                    // sh 'mvn test >> ${logFile} 2>&1'
+                }
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: logFile, allowEmptyArchive: true
+                    emailext(
+                        to: 'fernandosenan@gmail.com',
+                        subject: "Unit and Integration Tests Success: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
+                        body: """<p>The Unit and Integration Tests stage has completed successfully.</p>
+                                 <p>Please find the log attached.</p>""",
+                        attachmentsPattern: logFile
+                    )
+                }
+                failure {
+                    archiveArtifacts artifacts: logFile, allowEmptyArchive: true
+                    emailext(
+                        to: 'fernandosenan@gmail.com',
+                        subject: "Unit and Integration Tests Failed: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
+                        body: """<p>The Unit and Integration Tests stage has failed. Please check the attached log for details.</p>""",
+                        attachmentsPattern: logFile
+                    )
+                }
             }
         }
-
         stage('Code Analysis') {
             steps {
                 echo 'Running static code analysis with SonarQube...'
@@ -34,11 +57,34 @@ pipeline {
         
         stage('Security Scan') {
             steps {
-                echo 'Performing security scan using OWASP Dependency-Check...'
-                // OWASP security scan
+                script {
+                    logFile = "security_scan.log"
+                    sh "echo Running security scan... > ${logFile}"
+                    // sh 'dependency-check.sh >> ${logFile} 2>&1'
+                }
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: logFile, allowEmptyArchive: true
+                    emailext(
+                        to: 'fernandosenan@gmail.com',
+                        subject: "Security Scan Success: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
+                        body: """<p>The Security Scan stage has completed successfully.</p>
+                                 <p>Please find the log attached.</p>""",
+                        attachmentsPattern: logFile
+                    )
+                }
+                failure {
+                    archiveArtifacts artifacts: logFile, allowEmptyArchive: true
+                    emailext(
+                        to: 'fernandosenan@gmail.com',
+                        subject: "Security Scan Failed: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
+                        body: """<p>The Security Scan stage has failed. Please check the attached log for details.</p>""",
+                        attachmentsPattern: logFile
+                    )
+                }
             }
         }
-
         stage('Deploy to Staging') {
             steps {
                 echo 'Deploying to staging server...'
@@ -61,9 +107,11 @@ pipeline {
         }
     }
 
-    post {
-        always {
-            echo 'This will always run, e.g., clean up or notifications'
+   post {
+        success {
+            mail to: 'fernandosenan@gmail.com',
+            subject: "Pipeline Success: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
+            body: "The pipeline has completed successfully."
         }
     }
 }
